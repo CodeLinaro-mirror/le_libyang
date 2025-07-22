@@ -152,10 +152,10 @@ LY_ERR lyd_validate(struct lyd_node **tree, const struct lys_module *module, con
         struct ly_set *ext_node_p, struct ly_set *ext_val_p, struct lyd_node **diff);
 
 /**
- * @brief Validate a data tree of an extension instance, which is assumed to be a separate data tree independent of
+ * @brief Validate a data subtree of an extension instance, which is assumed to be a separate data tree independent of
  * normal YANG data.
  *
- * @param[in,out] tree Data tree to validate, nodes may be autodeleted.
+ * @param[in,out] subtree Data subtree to validate, nodes may be autodeleted or added.
  * @param[in] ext Extension instance whose data to validate.
  * @param[in] val_opts Validation options, see @ref datavalidationoptions.
  * @param[in] validate_subtree Whether subtree was already validated (as part of data parsing) or not (separate validation).
@@ -167,7 +167,7 @@ LY_ERR lyd_validate(struct lyd_node **tree, const struct lys_module *module, con
  * @param[out] diff Generated validation diff, not generated if NULL.
  * @return LY_ERR value.
  */
-LY_ERR lyd_validate_ext(struct lyd_node **tree, const struct lysc_ext_instance *ext, uint32_t val_opts,
+LY_ERR lyd_validate_ext_tree(struct lyd_node **subtree, const struct lysc_ext_instance *ext, uint32_t val_opts,
         ly_bool validate_subtree, struct ly_set *node_when_p, struct ly_set *node_types_p, struct ly_set *meta_types_p,
         struct ly_set *ext_node_p, struct ly_set *ext_val_p, struct lyd_node **diff);
 
