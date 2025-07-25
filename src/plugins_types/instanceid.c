@@ -157,7 +157,8 @@ cleanup:
 LIBYANG_API_DEF LY_ERR
 lyplg_type_store_instanceid(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value, size_t value_len,
         uint32_t options, LY_VALUE_FORMAT format, void *prefix_data, uint32_t hints, const struct lysc_node *ctx_node,
-        struct lyd_value *storage, struct lys_glob_unres *unres, struct ly_err_item **err)
+        const struct lysc_ext_instance *top_ext, struct lyd_value *storage, struct lys_glob_unres *unres,
+        struct ly_err_item **err)
 {
     LY_ERR ret = LY_SUCCESS;
     struct lysc_type_instanceid *type_inst = (struct lysc_type_instanceid *)type;
@@ -176,10 +177,10 @@ lyplg_type_store_instanceid(const struct ly_ctx *ctx, const struct lysc_type *ty
     if (format == LY_VALUE_LYB) {
         /* value in LYB format is the same as in JSON format. */
         ret = lyplg_type_lypath_new(ctx, value, value_len, options, LY_VALUE_JSON, prefix_data, ctx_node,
-                unres, &path, err);
+                top_ext, unres, &path, err);
     } else {
         ret = lyplg_type_lypath_new(ctx, value, value_len, options, format, prefix_data, ctx_node,
-                unres, &path, err);
+                top_ext, unres, &path, err);
     }
     LY_CHECK_GOTO(ret, cleanup);
 
@@ -227,8 +228,8 @@ cleanup:
 
 LIBYANG_API_DEF LY_ERR
 lyplg_type_validate_instanceid(const struct ly_ctx *ctx, const struct lysc_type *UNUSED(type),
-        const struct lyd_node *ctx_node, const struct lyd_node *tree, struct lyd_value *storage,
-        struct ly_err_item **err)
+        const struct lyd_node *ctx_node, const struct lyd_node *tree, const struct lysc_ext_instance *top_ext,
+        struct lyd_value *storage, struct ly_err_item **err)
 {
     LY_ERR ret = LY_SUCCESS;
     struct lysc_type_instanceid *type_inst = (struct lysc_type_instanceid *)storage->realtype;
@@ -243,7 +244,7 @@ lyplg_type_validate_instanceid(const struct ly_ctx *ctx, const struct lysc_type 
     }
 
     /* find the target in data */
-    if ((ret = ly_path_eval(storage->target, tree, NULL, NULL))) {
+    if ((ret = ly_path_eval(storage->target, tree, NULL, top_ext, NULL))) {
         value = lyd_value_get_canonical(ctx, storage);
         path = lyd_path(ctx_node, LYD_PATH_STD, NULL, 0);
         return ly_err_new(err, ret, LYVE_DATA, path, strdup("instance-required"), LY_ERRMSG_NOINST, value);
@@ -274,7 +275,7 @@ lyplg_type_print_instanceid(const struct ly_ctx *ctx, const struct lyd_value *va
     if (!value->target) {
         /* schema default value, compile it first */
         if (lyplg_type_lypath_new(ctx, value->_canonical, strlen(value->_canonical), 0, LY_VALUE_JSON, NULL, NULL,
-                NULL, &p, &err)) {
+                NULL, NULL, &p, &err)) {
             if (err) {
                 ly_err_print(ctx, err);
                 ly_err_free(err);
@@ -317,7 +318,7 @@ lyplg_type_dup_instanceid(const struct ly_ctx *ctx, const struct lyd_value *orig
     if (!original->target) {
         /* schema default value, needs to be compiled */
         if (lyplg_type_lypath_new(ctx, original->_canonical, strlen(original->_canonical), 0, LY_VALUE_JSON, NULL, NULL,
-                NULL, &dup->target, &err)) {
+                NULL, NULL, &dup->target, &err)) {
             if (err) {
                 ly_err_print(ctx, err);
                 ly_err_free(err);

@@ -508,7 +508,7 @@ ly_err_print_build_path(const struct ly_ctx *ctx, const struct lyd_node *node, c
 LY_ERR
 lyd_value_store(const struct ly_ctx *ctx, struct lyd_value *val, const struct lysc_type *type, const void *value,
         size_t value_len, ly_bool is_utf8, ly_bool store_only, ly_bool *dynamic, LY_VALUE_FORMAT format, void *prefix_data,
-        uint32_t hints, const struct lysc_node *ctx_node, ly_bool *incomplete)
+        uint32_t hints, const struct lysc_node *ctx_node, const struct lysc_ext_instance *top_ext, ly_bool *incomplete)
 {
     LY_ERR ret;
     struct ly_err_item *err = NULL;
@@ -532,7 +532,8 @@ lyd_value_store(const struct ly_ctx *ctx, struct lyd_value *val, const struct ly
         options |= LYPLG_TYPE_STORE_ONLY;
     }
 
-    ret = type->plugin->store(ctx, type, value, value_len, options, format, prefix_data, hints, ctx_node, val, NULL, &err);
+    ret = type->plugin->store(ctx, type, value, value_len, options, format, prefix_data, hints, ctx_node, top_ext, val,
+            NULL, &err);
     if (dynamic) {
         *dynamic = 0;
     }
@@ -556,14 +557,14 @@ lyd_value_store(const struct ly_ctx *ctx, struct lyd_value *val, const struct ly
 
 LY_ERR
 lyd_value_validate_incomplete(const struct ly_ctx *ctx, const struct lysc_type *type, struct lyd_value *val,
-        const struct lyd_node *ctx_node, const struct lyd_node *tree)
+        const struct lyd_node *ctx_node, const struct lyd_node *tree, const struct lysc_ext_instance *top_ext)
 {
     LY_ERR ret;
     struct ly_err_item *err = NULL;
 
     assert(type->plugin->validate);
 
-    ret = type->plugin->validate(ctx, type, ctx_node, tree, val, &err);
+    ret = type->plugin->validate(ctx, type, ctx_node, tree, top_ext, val, &err);
     if (ret) {
         if (err) {
             ly_err_print_build_path(ctx, ctx_node, NULL, err);
@@ -580,7 +581,7 @@ lyd_value_validate_incomplete(const struct ly_ctx *ctx, const struct lysc_type *
 
 LY_ERR
 ly_value_validate(const struct ly_ctx *ctx, const struct lysc_node *node, const char *value, size_t value_len,
-        LY_VALUE_FORMAT format, void *prefix_data, uint32_t hints)
+        LY_VALUE_FORMAT format, void *prefix_data, uint32_t hints, const struct lysc_ext_instance *top_ext)
 {
     LY_ERR rc = LY_SUCCESS;
     struct ly_err_item *err = NULL;
@@ -596,7 +597,7 @@ ly_value_validate(const struct ly_ctx *ctx, const struct lysc_node *node, const 
 
     type = ((struct lysc_node_leaf *)node)->type;
     rc = type->plugin->store(ctx ? ctx : node->module->ctx, type, value, value_len, 0, format, prefix_data, hints, node,
-            &storage, NULL, &err);
+            top_ext, &storage, NULL, &err);
     if (rc == LY_EINCOMPLETE) {
         /* actually success since we do not provide the context tree and call validation with
          * LY_TYPE_OPTS_INCOMPLETE_DATA */
@@ -637,15 +638,14 @@ lyd_value_validate(const struct ly_ctx *ctx, const struct lysc_node *schema, con
     type = ((struct lysc_node_leaf *)schema)->type;
 
     /* store */
-    rc = type->plugin->store(ctx, type, value, value_len, 0, LY_VALUE_JSON, NULL,
-            LYD_HINT_DATA, schema, &val, NULL, &err);
+    rc = type->plugin->store(ctx, type, value, value_len, 0, LY_VALUE_JSON, NULL, LYD_HINT_DATA, schema, NULL, &val, NULL, &err);
     if (!rc || (rc == LY_EINCOMPLETE)) {
         stored = 1;
     }
 
     if (ctx_node && (rc == LY_EINCOMPLETE)) {
         /* resolve */
-        rc = type->plugin->validate(ctx, type, ctx_node, ctx_node, &val, &err);
+        rc = type->plugin->validate(ctx, type, ctx_node, ctx_node, NULL, &val, &err);
     }
 
     if (rc && (rc != LY_EINCOMPLETE) && err) {
@@ -694,7 +694,8 @@ lyd_value_compare(const struct lyd_node_term *node, const char *value, size_t va
 
     /* store the value */
     LOG_LOCSET(NULL, &node->node);
-    ret = lyd_value_store(ctx, &val, type, value, value_len, 0, 0, NULL, LY_VALUE_JSON, NULL, LYD_HINT_DATA, node->schema, NULL);
+    ret = lyd_value_store(ctx, &val, type, value, value_len, 0, 1, NULL, LY_VALUE_JSON, NULL, LYD_HINT_DATA,
+            node->schema, NULL, NULL);
     LOG_LOCBACK(0, 1);
     LY_CHECK_RET(ret);
 
@@ -840,7 +841,7 @@ lyd_parse_opaq_list_error(const struct lyd_node *node, const struct lysc_node *s
         /* check value */
         opaq_k = (struct lyd_node_opaq *)child;
         ret = ly_value_validate(LYD_CTX(node), key, opaq_k->value, strlen(opaq_k->value), opaq_k->format,
-                opaq_k->val_prefix_data, opaq_k->hints);
+                opaq_k->val_prefix_data, opaq_k->hints, NULL);
         LY_CHECK_GOTO(ret, cleanup);
     }
 
@@ -946,7 +947,8 @@ lyd_parse_opaq_error(const struct lyd_node *node)
 
     if (snode->nodetype & LYD_NODE_TERM) {
         /* leaf / leaf-list */
-        rc = ly_value_validate(ctx, snode, opaq->value, strlen(opaq->value), opaq->format, opaq->val_prefix_data, opaq->hints);
+        rc = ly_value_validate(ctx, snode, opaq->value, strlen(opaq->value), opaq->format, opaq->val_prefix_data,
+                opaq->hints, NULL);
         LY_CHECK_GOTO(rc, cleanup);
     } else if (snode->nodetype == LYS_LIST) {
         /* list */
@@ -1341,7 +1343,7 @@ ly_nested_ext_schema(const struct lyd_node *parent, const struct lysc_node *spar
         }
 
         /* try to get the schema node */
-        r = ext_snode_cb(&nested_exts[u], parent, sparent, prefix, prefix_len, format, prefix_data, name, name_len, snode);
+        r = ext_snode_cb(&nested_exts[u], parent, sparent, prefix, prefix_len, format, prefix_data, name, name_len, 0, snode);
         if (!r) {
             if (ext) {
                 /* data successfully created, remember the ext instance */

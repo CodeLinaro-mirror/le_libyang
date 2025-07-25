@@ -820,28 +820,28 @@ test_plugin_store(void **state)
      */
     val_text = "";
     assert_int_equal(LY_SUCCESS, type->store(UTEST_LYCTX, lysc_type, val_text, strlen(val_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &value, NULL, &err));
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &value, NULL, &err));
     CHECK_LYD_VALUE(value, BITS, "");
     assert_ptr_equal(value.realtype, lysc_type);
     type->free(UTEST_LYCTX, &value);
 
     val_text = "zero one two";
     assert_int_equal(LY_SUCCESS, type->store(UTEST_LYCTX, lysc_type, val_text, strlen(val_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &value, NULL, &err));
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &value, NULL, &err));
     CHECK_LYD_VALUE(value, BITS, "zero one two", "zero", "one", "two");
     assert_ptr_equal(value.realtype, lysc_type);
     type->free(UTEST_LYCTX, &value);
 
     val_text = "zero two";
     assert_int_equal(LY_SUCCESS, type->store(UTEST_LYCTX, lysc_type, val_text, strlen(val_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &value, NULL, &err));
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &value, NULL, &err));
     CHECK_LYD_VALUE(value, BITS, "zero two", "zero", "two");
     assert_ptr_equal(value.realtype, lysc_type);
     type->free(UTEST_LYCTX, &value);
 
     val_text = "\n ";
     ly_ret = type->store(UTEST_LYCTX, lysc_type, val_text, strlen(val_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &value, NULL, &err);
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &value, NULL, &err);
     assert_int_equal(LY_SUCCESS, ly_ret);
     CHECK_LYD_VALUE(value, BITS, "");
     assert_ptr_equal(value.realtype, lysc_type);
@@ -855,7 +855,7 @@ test_plugin_store(void **state)
     alloc = (char *)malloc(strlen(val_text) + 1);
     memcpy(alloc, val_text, strlen(val_text) + 1);
     ly_ret = type->store(UTEST_LYCTX, lysc_type, alloc, strlen(val_text),
-            LYPLG_TYPE_STORE_DYNAMIC, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &value, NULL, &err);
+            LYPLG_TYPE_STORE_DYNAMIC, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &value, NULL, &err);
     alloc = NULL;
     assert_int_equal(LY_SUCCESS, ly_ret);
     CHECK_LYD_VALUE(value, BITS, "two", "two");
@@ -866,7 +866,7 @@ test_plugin_store(void **state)
     lysc_type_test.basetype = LY_TYPE_INT8;
     val_text = "two";
     ly_ret = type->store(UTEST_LYCTX, &lysc_type_test, val_text, strlen(val_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &value, NULL, &err);
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &value, NULL, &err);
     assert_int_equal(LY_EINVAL, ly_ret);
     ly_err_free(err);
 
@@ -876,14 +876,14 @@ test_plugin_store(void **state)
     val_text = "two";
     err = NULL;
     ly_ret = type->store(UTEST_LYCTX, lysc_type, val_text, strlen(val_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_HEXNUM, NULL, &value, NULL, &err);
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_HEXNUM, NULL, NULL, &value, NULL, &err);
     assert_int_equal(LY_EVALID, ly_ret);
     ly_err_free(err);
 
     val_text = "two two";
     err = NULL;
     ly_ret = type->store(UTEST_LYCTX, lysc_type, val_text, strlen(val_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &value, NULL, &err);
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &value, NULL, &err);
     assert_int_equal(LY_EVALID, ly_ret);
     ly_err_free(err);
 }
@@ -918,7 +918,7 @@ test_plugin_compare(void **state)
     /* CREATE VALUES */
     for (unsigned int it = 0; it < sizeof(val_init) / sizeof(val_init[0]); it++) {
         ly_ret = type->store(UTEST_LYCTX, lysc_type, val_init[it], strlen(val_init[it]),
-                0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &(values[it]), NULL, &err);
+                0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &(values[it]), NULL, &err);
         assert_int_equal(LY_SUCCESS, ly_ret);
     }
 
@@ -939,7 +939,7 @@ test_plugin_compare(void **state)
     diff_type_text = val_init[2];
     diff_type = ((struct lysc_node_leaf *)mod->compiled->data->next)->type;
     ly_ret = diff_type->plugin->store(UTEST_LYCTX, diff_type, diff_type_text, strlen(diff_type_text),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &diff_type_val, NULL, &err);
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &diff_type_val, NULL, &err);
     assert_int_equal(LY_SUCCESS, ly_ret);
     assert_int_equal(LY_SUCCESS, type->compare(UTEST_LYCTX, &diff_type_val, &(values[2])));
     assert_int_equal(LY_ENOT,    type->compare(UTEST_LYCTX, &diff_type_val, &(values[1])));
@@ -967,9 +967,9 @@ test_plugin_sort(void **state)
 
     /* 1000 < 1001 */
     assert_int_equal(LY_SUCCESS, type->store(UTEST_LYCTX, lysc_type, "three", strlen("three"),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &val1, NULL, &err));
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &val1, NULL, &err));
     assert_int_equal(LY_SUCCESS, type->store(UTEST_LYCTX, lysc_type, "three one", strlen("three one"),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &val2, NULL, &err));
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &val2, NULL, &err));
     assert_true(0 > type->sort(UTEST_LYCTX, &val1, &val2));
     assert_true(0 < type->sort(UTEST_LYCTX, &val2, &val1));
     assert_int_equal(0, type->sort(UTEST_LYCTX, &val1, &val1));
@@ -978,9 +978,9 @@ test_plugin_sort(void **state)
 
     /* 0011 == 0011 */
     assert_int_equal(LY_SUCCESS, type->store(UTEST_LYCTX, lysc_type, "zero one", strlen("zero one"),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &val1, NULL, &err));
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &val1, NULL, &err));
     assert_int_equal(LY_SUCCESS, type->store(UTEST_LYCTX, lysc_type, "one zero", strlen("one zero"),
-            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &val2, NULL, &err));
+            0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &val2, NULL, &err));
     assert_int_equal(0, type->sort(UTEST_LYCTX, &val1, &val2));
     assert_int_equal(0, type->sort(UTEST_LYCTX, &val2, &val1));
     type->free(UTEST_LYCTX, &val1);
@@ -1010,7 +1010,7 @@ test_plugin_print(void **state)
     /* CREATE VALUES */
     for (unsigned int it = 0; it < sizeof(val_init) / sizeof(val_init[0]); it++) {
         ly_ret = type->store(UTEST_LYCTX, lysc_type, val_init[it], strlen(val_init[it]),
-                0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &(values[it]), NULL, &err);
+                0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &(values[it]), NULL, &err);
         assert_int_equal(LY_SUCCESS, ly_ret);
     }
 
@@ -1052,7 +1052,7 @@ test_plugin_dup(void **state)
     /* CREATE VALUES */
     for (unsigned int it = 0; it < sizeof(val_init) / sizeof(val_init[0]); it++) {
         ly_ret = type->store(UTEST_LYCTX, lysc_type, val_init[it], strlen(val_init[it]),
-                0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, &(values[it]), NULL, &err);
+                0, LY_VALUE_XML, NULL, LYD_VALHINT_STRING, NULL, NULL, &(values[it]), NULL, &err);
         assert_int_equal(LY_SUCCESS, ly_ret);
     }
 

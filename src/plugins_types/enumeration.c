@@ -39,8 +39,8 @@
 LIBYANG_API_DEF LY_ERR
 lyplg_type_store_enum(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value, size_t value_len,
         uint32_t options, LY_VALUE_FORMAT format, void *UNUSED(prefix_data), uint32_t hints,
-        const struct lysc_node *UNUSED(ctx_node), struct lyd_value *storage, struct lys_glob_unres *UNUSED(unres),
-        struct ly_err_item **err)
+        const struct lysc_node *UNUSED(ctx_node), const struct lysc_ext_instance *UNUSED(top_ext),
+        struct lyd_value *storage, struct lys_glob_unres *UNUSED(unres), struct ly_err_item **err)
 {
     struct lysc_type_enum *type_enum = (struct lysc_type_enum *)type;
     LY_ERR ret = LY_SUCCESS;

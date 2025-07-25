@@ -26,10 +26,10 @@
 static void lyplg_type_free_lyds(const struct ly_ctx *ctx, struct lyd_value *value);
 
 static LY_ERR
-lyplg_type_store_lyds(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value,
-        size_t UNUSED(value_len), uint32_t options, LY_VALUE_FORMAT format, void *UNUSED(prefix_data),
-        uint32_t UNUSED(hints), const struct lysc_node *UNUSED(ctx_node), struct lyd_value *storage,
-        struct lys_glob_unres *UNUSED(unres), struct ly_err_item **UNUSED(err))
+lyplg_type_store_lyds(const struct ly_ctx *ctx, const struct lysc_type *type, const void *value, size_t UNUSED(value_len),
+        uint32_t options, LY_VALUE_FORMAT format, void *UNUSED(prefix_data), uint32_t UNUSED(hints),
+        const struct lysc_node *UNUSED(ctx_node), const struct lysc_ext_instance *UNUSED(top_ext),
+        struct lyd_value *storage, struct lys_glob_unres *UNUSED(unres), struct ly_err_item **UNUSED(err))
 {
     int ret;
     struct rb_node *rbt = NULL;

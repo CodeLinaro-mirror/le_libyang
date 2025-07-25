@@ -179,6 +179,26 @@ yangdata_printer_info(struct lyspr_ctx *ctx, struct lysc_ext_instance *ext, ly_b
 }
 
 /**
+ * @brief Snode callback for yang-data.
+ */
+static LY_ERR
+yangdata_snode(struct lysc_ext_instance *ext, const struct lyd_node *parent, const struct lysc_node *sparent,
+        const char *prefix, uint32_t UNUSED(prefix_len), LY_VALUE_FORMAT UNUSED(format), void *UNUSED(prefix_data),
+        const char *name, uint32_t UNUSED(name_len), ly_bool UNUSED(in_xpath), const struct lysc_node **snode)
+{
+    assert(!parent && !sparent && !prefix && !name);
+    (void)parent;
+    (void)sparent;
+    (void)prefix;
+    (void)name;
+
+    /* first top-level node */
+    *snode = ext->compiled;
+
+    return LY_SUCCESS;
+}
+
+/**
  * @brief Free parsed yang-data extension instance data.
  *
  * Implementation of ::lyplg_clb_parse_free_clb callback set as lyext_plugin::pfree.
@@ -267,8 +287,8 @@ const struct lyplg_ext_record plugins_yangdata[] = {
         .plugin.printer_info = yangdata_printer_info,
         .plugin.printer_ctree = yangdata_sprinter_ctree,
         .plugin.printer_ptree = yangdata_sprinter_ptree,
-        .plugin.node = NULL,
-        .plugin.snode = NULL,
+        .plugin.node_xpath = NULL,
+        .plugin.snode = yangdata_snode,
         .plugin.validate = NULL,
         .plugin.pfree = yangdata_pfree,
         .plugin.cfree = yangdata_cfree
