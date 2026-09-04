@@ -287,8 +287,8 @@ struct lys_diff_s {
     const char *old_prefix;                         /**< old module local prefix */
     const char *new_prefix;                         /**< new module local prefix */
     ly_bool is_yang10;                              /**< marks using YANG 1.0 update rules */
-    ly_bool with_parsed;                            /**< marks generating diff for parsed schema in addition to compiled */
-    ly_bool with_priv_parsed;                       /**< marks compiled nodes having references to parsed nodes */
+    ly_bool gen_local;                              /**< marks generating diff for locally resolved module */
+    ly_bool gen_full;                               /**< marks generating diff for fully resolved module */
     enum lys_diff_conform_e conform;                /**< conformance of the whole diff */
     const struct ly_ctx *ctx;                       /**< context to use */
 };
@@ -313,6 +313,15 @@ LY_ERR schema_diff_add_change(enum lys_diff_change_e change, enum lys_diff_chang
  * @return Changed statement.
  */
 enum lys_diff_changed_e schema_diff_stmt2changed(enum ly_stmt stmt);
+
+/**
+ * @brief Check whether the node is defined in an imported module.
+ *
+ * @param[in] node Node to check.
+ * @return 1 if @p node is from an import;
+ * @return 0 otherwise.
+ */
+ly_bool schema_diff_is_imported(const struct lysc_node *node);
 
 /**
  * @brief Check changes of a text whose change is always considered ED.

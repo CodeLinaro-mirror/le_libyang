@@ -1774,23 +1774,23 @@ static LY_ERR
 lys_compile_parsed_only_exts(struct lysc_ctx *ctx, const struct lysp_ext_instance *exts_p, void *parent,
         enum ly_stmt parent_stmt, struct lysc_ext_instance **exts)
 {
-    LY_ARRAY_COUNT_TYPE u;
+    LYA_COUNT_T u;
     struct lyplg_ext *ext_plg;
     struct lysc_ext *ext_def;
     struct lysc_ext_instance *ext;
     LY_ERR r;
 
-    LY_ARRAY_FOR(exts_p, u) {
+    LYA_FOR(exts_p, u) {
         /* find the compiled extension definition and its plugin */
         LY_CHECK_RET(lysc_ext_find_definition(ctx->ctx, &exts_p[u], &ext_def));
         ext_plg = LYSC_GET_EXT_PLG(ext_def->plugin_ref);
 
         /* compile this extension if it has the callback */
         if (ext_plg && ext_plg->compile) {
-            LY_ARRAY_NEW_RET(ctx->ctx, *exts, ext, LY_EMEM);
+            LYA_ADD_ITEM(*exts, ext, LOGMEM(ctx->ctx); return LY_EMEM);
             r = lys_compile_ext(ctx, &exts_p[u], ext, parent);
             if (r == LY_ENOT) {
-                LY_ARRAY_DECREMENT(*exts);
+                LYA_DECREMENT(*exts);
                 continue;
             } else if (r) {
                 return r;
@@ -1817,35 +1817,35 @@ lys_compile_parsed_only_exts(struct lysc_ctx *ctx, const struct lysp_ext_instanc
 static LY_ERR
 lys_compile_parsed_only_ext(struct lysc_ctx *ctx, const struct lysp_module *mod_p, struct lysc_module *mod_c)
 {
-    LY_ARRAY_COUNT_TYPE u;
+    LYA_COUNT_T u;
 
     /* revision */
-    LY_ARRAY_FOR(mod_p->revs, u) {
+    LYA_FOR(mod_p->revs, u) {
         LY_CHECK_RET(lys_compile_parsed_only_exts(ctx, mod_p->revs[u].exts, mod_p->mod, LY_STMT_MODULE, &mod_c->exts));
     }
 
     /* import */
-    LY_ARRAY_FOR(mod_p->imports, u) {
+    LYA_FOR(mod_p->imports, u) {
         LY_CHECK_RET(lys_compile_parsed_only_exts(ctx, mod_p->imports[u].exts, mod_p->mod, LY_STMT_MODULE, &mod_c->exts));
     }
 
     /* include */
-    LY_ARRAY_FOR(mod_p->includes, u) {
+    LYA_FOR(mod_p->includes, u) {
         LY_CHECK_RET(lys_compile_parsed_only_exts(ctx, mod_p->includes[u].exts, mod_p->mod, LY_STMT_MODULE, &mod_c->exts));
     }
 
     /* feature */
-    LY_ARRAY_FOR(mod_p->features, u) {
+    LYA_FOR(mod_p->features, u) {
         LY_CHECK_RET(lys_compile_parsed_only_exts(ctx, mod_p->features[u].exts, mod_p->mod, LY_STMT_MODULE, &mod_c->exts));
     }
 
     /* typedef */
-    LY_ARRAY_FOR(mod_p->typedefs, u) {
+    LYA_FOR(mod_p->typedefs, u) {
         LY_CHECK_RET(lys_compile_parsed_only_exts(ctx, mod_p->typedefs[u].exts, mod_p->mod, LY_STMT_MODULE, &mod_c->exts));
     }
 
     /* deviation */
-    LY_ARRAY_FOR(mod_p->deviations, u) {
+    LYA_FOR(mod_p->deviations, u) {
         LY_CHECK_RET(lys_compile_parsed_only_exts(ctx, mod_p->deviations[u].exts, mod_p->mod, LY_STMT_MODULE, &mod_c->exts));
     }
 
