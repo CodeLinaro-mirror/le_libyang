@@ -441,6 +441,13 @@ lyd_parse_op(const struct ly_ctx *ctx, struct lyd_node *parent, struct ly_in *in
     case LYD_TYPE_REPLY_YANG:
         int_opts = LYD_INTOPT_REPLY | (parent ? LYD_INTOPT_WITH_SIBLINGS : LYD_INTOPT_NO_SIBLINGS);
         break;
+    case LYD_TYPE_NOTIF_ENVELOPE:
+        LY_CHECK_ARG_RET(ctx, (format == LYD_XML) || (format == LYD_JSON) || (format == LYD_CBOR), !parent, tree, op,
+                LY_EINVAL);
+        LY_CHECK_ERR_RET(!ly_ctx_get_module_implemented(ctx, "ietf-yp-notification"),
+                LOGERR(ctx, LY_EINVAL, "Module \"ietf-yp-notification\" is not implemented."), LY_EINVAL);
+        int_opts = LYD_INTOPT_NOTIF | LYD_INTOPT_NO_SIBLINGS | LYD_INTOPT_ENVELOPE;
+        break;
     default:
         LOGINT(ctx);
         rc = LY_EINT;
